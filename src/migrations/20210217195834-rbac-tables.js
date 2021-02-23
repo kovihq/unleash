@@ -6,6 +6,7 @@ exports.up = function(db, cb) {
           name        text not null,
           description text,
           type        text not null default 'custom',
+          project     text,
           created_at  TIMESTAMP WITH TIME ZONE DEFAULT now()
        );
       CREATE TABLE IF NOT EXISTS role_user
@@ -26,22 +27,40 @@ exports.up = function(db, cb) {
       WITH admin AS (
         INSERT INTO roles(name, description, type)
         VALUES ('Super User', 'Admin the Unleash Instance', 'root')
-        RETURNING id user_id
+        RETURNING id role_id
       )
 
       INSERT INTO role_permission(role_id, permission) 
-      SELECT user_id, 'ADMIN' from admin;
+      SELECT role_id, 'ADMIN' from admin;
 
       WITH regular AS (
         INSERT INTO roles(name, description, type)
         VALUES ('Regular', 'Regular contributor. Can modify all root resources.', 'root')
-        RETURNING id user_id
+        RETURNING id role_id
       )
-
-      INSERT INTO role_permission(role_id, permission)
+      INSERT INTO role_permission(role_id, project, permission)
       VALUES
-        ((SELECT user_id from regular), 'CREATE_ADDON'),
-        ((SELECT user_id from regular), 'UPDATE_ADDON');
+        ((SELECT role_id from regular), '', 'CREATE_STRATEGY'),
+        ((SELECT role_id from regular), '', 'UPDATE_STRATEGY'),
+        ((SELECT role_id from regular), '', 'DELETE_STRATEGY'),
+
+        ((SELECT role_id from regular), '', 'UPDATE_APPLICATION'),
+
+        ((SELECT role_id from regular), '', 'CREATE_CONTEXT_FIELD'),
+        ((SELECT role_id from regular), '', 'UPDATE_CONTEXT_FIELD'),
+        ((SELECT role_id from regular), '', 'DELETE_CONTEXT_FIELD'),
+        
+        ((SELECT role_id from regular), '', 'CREATE_PROJECT'),
+
+        ((SELECT role_id from regular), '', 'CREATE_ADDON'),
+        ((SELECT role_id from regular), '', 'UPDATE_ADDON'),
+        ((SELECT role_id from regular), '', 'DELETE_ADDON'),
+      
+        ((SELECT role_id from regular), 'default', 'UPDATE_PROJECT'),
+        ((SELECT role_id from regular), 'default', 'DELETE_PROJECT'),
+        ((SELECT role_id from regular), 'default', 'CREATE_FEATURE'),
+        ((SELECT role_id from regular), 'default', 'UPDATE_FEATURE'),
+        ((SELECT role_id from regular), 'default', 'DELETE_FEATURE');
       
       INSERT INTO roles(name, description, type)
       VALUES ('Read', 'A Read only user.', 'root');

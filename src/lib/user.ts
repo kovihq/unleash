@@ -1,9 +1,29 @@
-'use strict';
 
-const gravatarUrl = require('gravatar-url');
-const Joi = require('joi');
+import gravatarUrl from 'gravatar-url';
+import Joi from 'joi';
 
-module.exports = class User {
+export interface UserData {
+    id?: number;
+    name?: string;
+    username?: string;
+    email?: string;
+    permissions?: string[];
+    imageUrl?: string;
+    seenAt?: Date;
+    loginAttempts?: number;
+    createdAt?: Date;
+}
+
+class User {
+    id: number;
+    name: string;
+    username: string;
+    email: string;
+    permissions: string[];
+    imageUrl: string;
+    seenAt: Date;
+    loginAttempts: number;
+    createdAt: Date;
     constructor({
         id,
         name,
@@ -14,9 +34,9 @@ module.exports = class User {
         seenAt,
         loginAttempts,
         createdAt,
-    } = {}) {
+    }: UserData = {} ) {
         if (!username && !email) {
-            throw new TypeError('Username or Email us reuqired');
+            throw new TypeError('Username or Email us required');
         }
         Joi.assert(email, Joi.string().email(), 'Email');
         Joi.assert(username, Joi.string(), 'Username');
@@ -35,8 +55,11 @@ module.exports = class User {
 
     generateImageUrl() {
         return gravatarUrl(this.email || this.username, {
-            size: '42',
+            size: 42,
             default: 'retro',
         });
     }
 };
+
+module.exports = User;
+export default User;

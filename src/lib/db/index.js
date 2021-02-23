@@ -1,7 +1,7 @@
 'use strict';
 
 // eslint-disable-next-line
-import AccessStore from './access-store';
+import { AccessStore } from './access-store';
 
 const { createDb } = require('./db-pool');
 const EventStore = require('./event-store');

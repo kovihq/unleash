@@ -85,8 +85,16 @@ class ProjectService {
             return;
         }
 
-        // Interntional throw here!
+        // Intentional throw here!
         throw new NameExistsError('A project with this id already exists.');
+    }
+
+    async getUsersWithAccess() {
+        /*
+        { admins: [{userId: 12, name: 'Some Name', email: 'me@mail.com}]}
+        { regular: [{userId: 12, name: 'Some Name', email: 'me@mail.com}]}
+
+        */
     }
 }
 
