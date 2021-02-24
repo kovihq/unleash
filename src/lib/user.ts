@@ -1,4 +1,3 @@
-
 import gravatarUrl from 'gravatar-url';
 import Joi from 'joi';
 
@@ -14,16 +13,25 @@ export interface UserData {
     createdAt?: Date;
 }
 
-class User {
+export default class User {
     id: number;
+
     name: string;
+
     username: string;
+
     email: string;
+
     permissions: string[];
+
     imageUrl: string;
+
     seenAt: Date;
+
     loginAttempts: number;
+
     createdAt: Date;
+
     constructor({
         id,
         name,
@@ -34,7 +42,7 @@ class User {
         seenAt,
         loginAttempts,
         createdAt,
-    }: UserData = {} ) {
+    }: UserData = {}) {
         if (!username && !email) {
             throw new TypeError('Username or Email us required');
         }
@@ -53,13 +61,12 @@ class User {
         this.createdAt = createdAt;
     }
 
-    generateImageUrl() {
+    generateImageUrl(): string {
         return gravatarUrl(this.email || this.username, {
             size: 42,
             default: 'retro',
         });
     }
-};
+}
 
 module.exports = User;
-export default User;

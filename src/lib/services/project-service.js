@@ -8,8 +8,10 @@ class ProjectService {
     constructor(
         { projectStore, eventStore, featureToggleStore },
         { getLogger },
+        accessService,
     ) {
         this.projectStore = projectStore;
+        this.accessService = accessService;
         this.eventStore = eventStore;
         this.featureToggleStore = featureToggleStore;
         this.logger = getLogger('services/project-service.js');
@@ -23,29 +25,34 @@ class ProjectService {
         return this.projectStore.get(id);
     }
 
-    async createProject(newProject, username) {
+    async createProject(newProject, user) {
         const data = await schema.validateAsync(newProject);
         await this.validateUniqueId(data.id);
+
+        await this.projectStore.create(data);
+        await this.accessService.createDefaultProjectRoles(user, data.id);
+
         await this.eventStore.store({
             type: eventType.PROJECT_CREATED,
-            createdBy: username,
+            createdBy: user.username,
             data,
         });
-        await this.projectStore.create(data);
+
+        return data;
     }
 
-    async updateProject(updatedProject, username) {
+    async updateProject(updatedProject, user) {
         await this.projectStore.get(updatedProject.id);
         const project = await schema.validateAsync(updatedProject);
         await this.eventStore.store({
             type: eventType.PROJECT_UPDATED,
-            createdBy: username,
+            createdBy: user.username,
             data: project,
         });
         await this.projectStore.update(project);
     }
 
-    async deleteProject(id, username) {
+    async deleteProject(id, user) {
         if (id === 'default') {
             throw new InvalidOperationError(
                 'You can not delete the default project!',
@@ -65,7 +72,7 @@ class ProjectService {
 
         await this.eventStore.store({
             type: eventType.PROJECT_DELETED,
-            createdBy: username,
+            createdBy: user.username,
             data: { id },
         });
         await this.projectStore.delete(id);
