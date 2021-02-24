@@ -6,7 +6,8 @@ const getLogger = require('../../fixtures/no-logger');
 const { AccessService } = require('../../../lib/services/access-service');
 const permissions = require('../../../lib/permissions');
 const User = require('../../../lib/user');
-const ProjectService = require('../../../lib/services/project-service');
+
+// const ProjectService = require('../../../lib/services/project-service');
 
 let stores;
 // let projectStore;
