@@ -17,22 +17,22 @@ let regularUser;
 let superUser;
 
 const createUserWithRegularAccess = async (name, email) => {
-    const { userStore, accessStore } = stores;
+    const { userStore } = stores;
     const user = await userStore.insert(new User({ name, email }));
-    const roles = await accessStore.getRoles();
+    const roles = await accessService.getRoles();
     const regularRole = roles.find(r => r.name === 'Regular');
-    await accessStore.addUserToRole(user.id, regularRole.id);
+    await accessService.addUserToRole(user, regularRole);
     return user;
 };
 
 const createSuperUser = async () => {
-    const { userStore, accessStore } = stores;
+    const { userStore } = stores;
     const user = await userStore.insert(
         new User({ name: 'Alice Admin', email: 'admin@getunleash.io' }),
     );
-    const roles = await accessStore.getRoles();
+    const roles = await accessService.getRoles();
     const superRole = roles.find(r => r.name === 'Super User');
-    await accessStore.addUserToRole(user.id, superRole.id);
+    await accessService.addUserToRole(user, superRole);
     return user;
 };
 
@@ -176,7 +176,7 @@ test.serial('should grant user access to project', async t => {
     );
     await accessService.createDefaultProjectRoles(user, project);
 
-    const roles = await accessService.getProjectRoles(project);
+    const roles = await accessService.getRolesForProject(project);
 
     const regularRole = roles.find(r => r.name === `${project} Regular`);
     await accessService.addUserToRole(sUser, regularRole);
@@ -189,4 +189,24 @@ test.serial('should grant user access to project', async t => {
     // Should not be able to admin the project itself.
     t.false(await accessService.hasPermission(sUser, UPDATE_PROJECT, project));
     t.false(await accessService.hasPermission(sUser, DELETE_PROJECT, project));
+});
+
+test.serial('should remove user from role', async t => {
+    const { userStore } = stores;
+    const user = await userStore.insert(
+        new User({ name: 'Some User', email: 'random123@getunleash.io' }),
+    );
+
+    const roles = await accessService.getRoles();
+    const regularRole = roles.find(r => r.name === 'Regular');
+    await accessService.addUserToRole(user, regularRole);
+
+    // check user has one role
+    const userRoles = await accessService.getRolesForUser(user);
+    t.is(userRoles.length, 1);
+    t.is(userRoles[0].name, 'Regular');
+
+    await accessService.removeUserFromRole(user, regularRole);
+    const userRolesAfterRemove = await accessService.getRolesForUser(user);
+    t.is(userRolesAfterRemove.length, 0);
 });

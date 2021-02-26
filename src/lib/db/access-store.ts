@@ -60,8 +60,23 @@ export class AccessStore {
         return this.db
             .select(['id', 'name', 'type', 'project', 'description'])
             .from<Role>(T.ROLES)
-            .where('type', 'project')
-            .andWhere('project', projectName);
+            .where('project', projectName);
+    }
+
+    async getRolesForUserId(userId: number): Promise<Role[]> {
+        return this.db
+            .select(['id', 'name', 'type', 'project', 'description'])
+            .from<Role[]>(T.ROLES)
+            .innerJoin(`${T.ROLE_USER} as ru`, 'ru.role_id', 'id')
+            .where('ru.user_id', '=', userId);
+    }
+
+    async getUserIdsForRole(roleId: number): Promise<Role[]> {
+        const rows = await this.db
+            .select(['user_id'])
+            .from<Role>(T.ROLE_USER)
+            .where('role_id', roleId);
+        return rows.map(r => r.user_id);
     }
 
     async addUserToRole(userId: number, roleId: number): Promise<void> {
@@ -69,6 +84,15 @@ export class AccessStore {
             user_id: userId,
             role_id: roleId,
         });
+    }
+
+    async removeUserFromRole(userId: number, roleId: number): Promise<void> {
+        return this.db(T.ROLE_USER)
+            .where({
+                user_id: userId,
+                role_id: roleId,
+            })
+            .delete();
     }
 
     async createRole(

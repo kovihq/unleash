@@ -29,6 +29,7 @@ class ProjectService {
         const data = await schema.validateAsync(newProject);
         await this.validateUniqueId(data.id);
 
+        // TODO: Validate access to create if RBAC
         await this.projectStore.create(data);
         await this.accessService.createDefaultProjectRoles(user, data.id);
 
@@ -44,12 +45,15 @@ class ProjectService {
     async updateProject(updatedProject, user) {
         await this.projectStore.get(updatedProject.id);
         const project = await schema.validateAsync(updatedProject);
+
+        // TODO: Validate access to create if RBAC
+        await this.projectStore.update(project);
+
         await this.eventStore.store({
             type: eventType.PROJECT_UPDATED,
             createdBy: user.username,
             data: project,
         });
-        await this.projectStore.update(project);
     }
 
     async deleteProject(id, user) {
@@ -59,6 +63,7 @@ class ProjectService {
             );
         }
 
+        // TODO: Validate access to create if RBAC
         const toggles = await this.featureToggleStore.getFeaturesBy({
             project: id,
             archived: 0,
@@ -96,12 +101,17 @@ class ProjectService {
         throw new NameExistsError('A project with this id already exists.');
     }
 
-    async getUsersWithAccess() {
-        /*
-        { admins: [{userId: 12, name: 'Some Name', email: 'me@mail.com}]}
-        { regular: [{userId: 12, name: 'Some Name', email: 'me@mail.com}]}
+    async getUsersWithAccess(projectId) {
+        return this.accessService.getProjectRoleUsers(projectId);
+    }
 
-        */
+    async addUser(projectId, user, type = 'regular') {
+        if (!['regular', 'admin'].includes(type)) {
+            throw new TypeError(`Not a valid role type: "${type}"`);
+        }
+        const roles = await this.accessService.getRolesForProject(projectId);
+        const role = roles.find(r => r.type === `project-${type}`);
+        await this.accessService.addUserToRole(user, role);
     }
 }
 

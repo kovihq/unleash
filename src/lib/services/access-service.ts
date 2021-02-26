@@ -20,15 +20,25 @@ const PROJECT_REGULAR = [CREATE_FEATURE, UPDATE_FEATURE, DELETE_FEATURE];
 
 interface Stores {
     accessStore: AccessStore;
+    userStore: any;
+}
+
+// Can replace this with a tuple?
+interface RoleUsers {
+    role: Role;
+    users: User[];
 }
 
 export class AccessService {
     private store: AccessStore;
 
+    private userStore: any;
+
     private logger: Function;
 
-    constructor({ accessStore }: Stores, { getLogger } : { getLogger: Function}) {
+    constructor({ accessStore, userStore }: Stores, { getLogger } : { getLogger: Function}) {
         this.store = accessStore;
+        this.userStore = userStore;
         this.logger = getLogger('/services/access-service.ts');
     }
 
@@ -43,8 +53,32 @@ export class AccessService {
         return this.store.addUserToRole(user.id, role.id);
     }
 
-    async getProjectRoles(projectName: string): Promise<Role[]> {
+    async removeUserFromRole(user: User, role: Role) {
+        return this.store.removeUserFromRole(user.id, role.id);
+    }
+
+    async getRoles(): Promise<Role[]> {
+        return this.store.getRoles();
+    }
+
+    async getRolesForProject(projectName: string): Promise<Role[]> {
         return this.store.getRolesForProject(projectName);
+    }
+
+    async getRolesForUser(user: User): Promise<Role[]> {
+        return this.store.getRolesForUserId(user.id);
+    }
+
+    async getProjectRoleUsers(projectName: string): Promise<RoleUsers[]> {
+        const roles = await this.store.getRolesForProject(projectName);
+        return Promise.all(roles.map(async role => {
+            const userIdList = await this.store.getUserIdsForRole(role.id);
+            const users = await this.userStore.getAllWithId(userIdList);
+            return {
+                role,
+                users
+            }
+        }));
     }
 
     async createDefaultProjectRoles(owner: User, projectId: string) {
@@ -54,7 +88,7 @@ export class AccessService {
 
         const adminRole = await this.store.createRole(
             `${projectId} Admin`,
-            'project',
+            'project-admin', //TODO: constant
             projectId,
             `Admin role for project = ${projectId}`,
         );
@@ -72,7 +106,7 @@ export class AccessService {
 
         const regularRole = await this.store.createRole(
             `${projectId} Regular`,
-            'project',
+            'project-regular',  //TODO: constant
             projectId,
             `Contributor role for project = ${projectId}`,
         );

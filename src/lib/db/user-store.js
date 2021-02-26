@@ -105,6 +105,14 @@ class UserStore {
         return users.map(rowToUser);
     }
 
+    async getAllWithId(userIdList) {
+        const users = await this.db
+            .select(USER_COLUMNS)
+            .from(TABLE)
+            .whereIn('id', userIdList);
+        return users.map(rowToUser);
+    }
+
     async get(idQuery) {
         const row = await this.buildSelectUser(idQuery).first(USER_COLUMNS);
         return rowToUser(row);

@@ -204,3 +204,97 @@ test.serial('should create roles when project is created', async t => {
     t.is(roles.length, 2);
     t.true(await accessService.hasPermission(user, UPDATE_PROJECT, project.id));
 });
+
+test.serial('should get list of users with access to project', async t => {
+    const project = {
+        id: 'test-roles-access',
+        name: 'New project',
+        description: 'Blah',
+    };
+    await projectService.createProject(project, user);
+    const roleWithUsers = await projectService.getUsersWithAccess(
+        project.id,
+        user,
+    );
+
+    const admin = roleWithUsers.find(ru => ru.role.type === 'project-admin');
+    const regular = roleWithUsers.find(
+        ru => ru.role.type === 'project-regular',
+    );
+
+    t.is(admin.users.length, 1);
+    t.is(admin.users[0].id, user.id);
+    t.is(admin.users[0].name, user.name);
+    t.is(regular.users.length, 0);
+});
+
+test.serial('should add a regular user to the project', async t => {
+    const project = {
+        id: 'add-users',
+        name: 'New project',
+        description: 'Blah',
+    };
+    await projectService.createProject(project, user);
+
+    const projectMember1 = await stores.userStore.insert(
+        new User({ name: 'Some Member', email: 'member1@getunleash.io' }),
+    );
+    const projectMember2 = await stores.userStore.insert(
+        new User({ name: 'Some Member 2', email: 'member2@getunleash.io' }),
+    );
+    await projectService.addUser(project.id, projectMember1, 'regular');
+    await projectService.addUser(project.id, projectMember2, 'regular');
+
+    const roleWithUsers = await projectService.getUsersWithAccess(
+        project.id,
+        user,
+    );
+    const regular = roleWithUsers.find(
+        ru => ru.role.type === 'project-regular',
+    );
+
+    t.is(regular.users.length, 2);
+    t.is(regular.users[0].id, projectMember1.id);
+    t.is(regular.users[0].name, projectMember1.name);
+    t.is(regular.users[1].id, projectMember2.id);
+    t.is(regular.users[1].name, projectMember2.name);
+});
+
+test.serial('should add admin users to the project', async t => {
+    const project = {
+        id: 'add-admin-users',
+        name: 'New project',
+        description: 'Blah',
+    };
+    await projectService.createProject(project, user);
+
+    const projectAdmin1 = await stores.userStore.insert(
+        new User({ name: 'Some Member', email: 'admin1@getunleash.io' }),
+    );
+    const projectAdmin2 = await stores.userStore.insert(
+        new User({ name: 'Some Member 2', email: 'admin2@getunleash.io' }),
+    );
+    await projectService.addUser(project.id, projectAdmin1, 'admin');
+    await projectService.addUser(project.id, projectAdmin2, 'admin');
+
+    const roleWithUsers = await projectService.getUsersWithAccess(
+        project.id,
+        user,
+    );
+    const admin = roleWithUsers.find(ru => ru.role.type === 'project-admin');
+
+    t.is(admin.users.length, 3);
+    t.is(admin.users[1].id, projectAdmin1.id);
+    t.is(admin.users[1].name, projectAdmin1.name);
+    t.is(admin.users[2].id, projectAdmin2.id);
+    t.is(admin.users[2].name, projectAdmin2.name);
+});
+
+test.serial('add user only accepts type "regular" and "admin"', async t => {
+    await t.throwsAsync(
+        async () => {
+            await projectService.addUser('some-id', user, 'bogus');
+        },
+        { instanceOf: TypeError, message: 'Not a valid role type: "bogus"' },
+    );
+});
