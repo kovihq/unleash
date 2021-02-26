@@ -3,6 +3,7 @@ const InvalidOperationError = require('../error/invalid-operation-error');
 const eventType = require('../event-type');
 const { nameType } = require('../routes/admin-api/util');
 const schema = require('./project-schema');
+const NotFoundError = require('../error/notfound-error');
 
 class ProjectService {
     constructor(
@@ -105,12 +106,12 @@ class ProjectService {
         return this.accessService.getProjectRoleUsers(projectId);
     }
 
-    async addUser(projectId, user, type = 'regular') {
-        if (!['regular', 'admin'].includes(type)) {
-            throw new TypeError(`Not a valid role type: "${type}"`);
-        }
+    async addUser(projectId, roleId, user) {
         const roles = await this.accessService.getRolesForProject(projectId);
-        const role = roles.find(r => r.type === `project-${type}`);
+        const role = roles.find(r => r.id === roleId);
+        if (!role) {
+            throw new NotFoundError(`Could not fine roleId=${roleId}`);
+        }
         await this.accessService.addUserToRole(user, role);
     }
 }

@@ -210,3 +210,21 @@ test.serial('should remove user from role', async t => {
     const userRolesAfterRemove = await accessService.getRolesForUser(user);
     t.is(userRolesAfterRemove.length, 0);
 });
+
+test.serial('should return role with users', async t => {
+    const { userStore } = stores;
+    const user = await userStore.insert(
+        new User({ name: 'Some User', email: 'random2223@getunleash.io' }),
+    );
+
+    const roles = await accessService.getRoles();
+    const regularRole = roles.find(r => r.name === 'Regular');
+    await accessService.addUserToRole(user, regularRole);
+
+    const roleWithUsers = await accessService.getRoleUsers(regularRole.id);
+
+    t.is(roleWithUsers.role.name, 'Regular');
+    t.true(roleWithUsers.users.length > 2);
+    t.truthy(roleWithUsers.users.find(u => u.id === user.id));
+    t.truthy(roleWithUsers.users.find(u => u.email === user.email));
+});

@@ -56,6 +56,14 @@ export class AccessStore {
             .from<Role>(T.ROLES);
     }
 
+    async getRoleWithId(id: number): Promise<Role> {
+        return this.db
+            .select(['id', 'name', 'type', 'description'])
+            .where('id', id)
+            .first()
+            .from<Role>(T.ROLES);
+    }
+
     async getRolesForProject(projectName: string): Promise<Role[]> {
         return this.db
             .select(['id', 'name', 'type', 'project', 'description'])

@@ -69,11 +69,23 @@ export class AccessService {
         return this.store.getRolesForUserId(user.id);
     }
 
+    async getRoleUsers(roleId) : Promise<RoleUsers> {
+        const [role, users] = await Promise.all([
+            this.store.getRoleWithId(roleId), 
+            this.getUsersForRole(roleId)]);
+        return {role, users}
+
+    }
+
+    private async getUsersForRole(roleId) : Promise<User[]> {
+        const userIdList = await this.store.getUserIdsForRole(roleId);
+        return this.userStore.getAllWithId(userIdList);
+    }
+
     async getProjectRoleUsers(projectName: string): Promise<RoleUsers[]> {
         const roles = await this.store.getRolesForProject(projectName);
         return Promise.all(roles.map(async role => {
-            const userIdList = await this.store.getUserIdsForRole(role.id);
-            const users = await this.userStore.getAllWithId(userIdList);
+            const users = await this.getUsersForRole(role.id);
             return {
                 role,
                 users
