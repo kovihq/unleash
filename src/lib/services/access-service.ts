@@ -1,4 +1,5 @@
-import { AccessStore, Role } from '../db/access-store';
+import { throws } from 'assert';
+import { AccessStore, Role, Permission } from '../db/access-store';
 import {
     ADMIN,
     UPDATE_PROJECT,
@@ -27,6 +28,10 @@ interface Stores {
 interface RoleUsers {
     role: Role;
     users: User[];
+}
+
+interface RoleData extends RoleUsers {
+    permissions: Permission[];
 }
 
 export class AccessService {
@@ -59,6 +64,15 @@ export class AccessService {
 
     async getRoles(): Promise<Role[]> {
         return this.store.getRoles();
+    }
+
+    async getRole(roleId: number): Promise<RoleData> {
+        const [role, permissions, users] = await Promise.all([
+            this.store.getRoleWithId(roleId),
+            this.store.getPermissionsForRole(roleId),
+            this.getUsersForRole(roleId),
+        ]);
+        return { role, permissions, users };
     }
 
     async getRolesForProject(projectName: string): Promise<Role[]> {

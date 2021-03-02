@@ -50,6 +50,16 @@ export class AccessStore {
         return rows;
     }
 
+    async getPermissionsForRole(roleId: number): Promise<Permission[]> {
+        const stopTimer = this.timer('getPermissionsForRole');
+        const rows = await this.db
+            .select('project', 'permission')
+            .from<Permission>(`${T.ROLE_PERMISSION}`)
+            .where('role_id', '=', roleId);
+        stopTimer();
+        return rows;
+    }
+
     async getRoles(): Promise<Role[]> {
         return this.db
             .select(['id', 'name', 'type', 'description'])

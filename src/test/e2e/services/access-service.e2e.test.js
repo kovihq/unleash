@@ -228,3 +228,25 @@ test.serial('should return role with users', async t => {
     t.truthy(roleWithUsers.users.find(u => u.id === user.id));
     t.truthy(roleWithUsers.users.find(u => u.email === user.email));
 });
+
+test.serial('should return role with permissions and users', async t => {
+    const { userStore } = stores;
+    const user = await userStore.insert(
+        new User({ name: 'Some User', email: 'random2244@getunleash.io' }),
+    );
+
+    const roles = await accessService.getRoles();
+    const regularRole = roles.find(r => r.name === 'Regular');
+    await accessService.addUserToRole(user, regularRole);
+
+    const roleWithPermission = await accessService.getRole(regularRole.id);
+
+    t.is(roleWithPermission.role.name, 'Regular');
+    t.true(roleWithPermission.permissions.length > 2);
+    t.truthy(
+        roleWithPermission.permissions.find(
+            p => p.permission === permissions.CREATE_PROJECT,
+        ),
+    );
+    t.true(roleWithPermission.users.length > 2);
+});
